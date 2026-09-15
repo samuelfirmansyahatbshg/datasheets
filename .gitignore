@@ -1,0 +1,26 @@
+# Auth — never commit these. The token cache is a live credential.
+.token_cache.json
+*.token_cache.json
+.env
+
+# Rendered output
+out/
+*.html
+!ovendash/templates/*.html
+
+# Downloaded submission assets (photos, raw logs)
+cache/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+~$*

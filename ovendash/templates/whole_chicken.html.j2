@@ -1,0 +1,193 @@
+{% extends "base.html.j2" %}
+
+{#
+  Whole Chicken. One template per food by design - each rubric differs enough
+  that a single template full of conditionals would be worse than a copy.
+
+  Layout follows the Excel "Final Assessment" sheet: scoring up top, the trace
+  in the middle, photos at the bottom, with the two raw JSON blobs presented as
+  their own readable panels.
+#}
+
+{% block content %}
+
+  {# ---- Scoring ---------------------------------------------------- #}
+  <div class="panel">
+    <h2>Final Scoring</h2>
+    <div class="body">
+      <table class="scores">
+        <tr>
+          <th class="rowlabel"></th>
+          {% for name, _ in s.score_row %}<th>{{ name }}</th>{% endfor %}
+        </tr>
+        <tr>
+          <td class="rowlabel">Score</td>
+          {% for _, v in s.score_row %}<td>{{ v | int }}</td>{% endfor %}
+        </tr>
+      </table>
+
+      <p style="margin:12px 0 6px;font-size:11px;color:var(--ink-soft);
+                text-transform:uppercase;letter-spacing:.05em;">
+        Group minimums &mdash; these are what the total adds up
+      </p>
+      <table class="scores">
+        <tr>
+          <th class="rowlabel"></th>
+          {% for name, _ in s.minimum_row %}<th>{{ name }}</th>{% endfor %}
+        </tr>
+        <tr>
+          <td class="rowlabel">Minimum</td>
+          {% for _, v in s.minimum_row %}<td>{{ v | int }}</td>{% endfor %}
+        </tr>
+      </table>
+
+      <div class="total">
+        <span class="n">{{ s.total_score | int }}</span>
+        <span class="of">/ 12 total</span>
+        {% if s.verdict == "Acceptable" %}
+          <span class="verdict ok">Acceptable</span>
+        {% elif s.verdict == "Unacceptable" %}
+          <span class="verdict no">Unacceptable</span>
+        {% else %}
+          <span class="verdict none">not scored</span>
+        {% endif %}
+      </div>
+
+      <p style="margin:10px 0 0;font-size:11px;color:var(--ink-faint);">
+        Temperature is <code>MIN(thigh, breast)</code>; Quality is
+        <code>MIN(meat texture, evenness, skin texture)</code>. Total is
+        Index + Temperature + Quality + Time, matching
+        <code>PCGDEOV-22325-6</code>.
+      </p>
+    </div>
+  </div>
+
+  {# ---- Chart ------------------------------------------------------ #}
+  {% include "_chart.html.j2" %}
+
+  {# ---- The two JSON blobs, side by side ---------------------------- #}
+  <div class="grid2">
+    <div class="panel">
+      <h2>Form Response</h2>
+      <div class="body">
+        <table class="kv">
+          {% for k, v in scoring_display %}
+            <tr>
+              <td class="k">{{ k }}</td>
+              {% if v %}<td class="v">{{ v }}</td>
+              {% else %}<td class="v empty">empty</td>{% endif %}
+            </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+
+    <div class="panel">
+      <h2>Calculated</h2>
+      <div class="body">
+        <table class="kv">
+          {% for k, v in calculated_display %}
+            <tr>
+              <td class="k">{{ k }}</td>
+              {% if v %}<td class="v">{{ v }}</td>
+              {% else %}<td class="v empty">empty</td>{% endif %}
+            </tr>
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+  </div>
+
+  {# ---- Info sheet -------------------------------------------------- #}
+  <div class="panel">
+    <h2>Information Sheet</h2>
+    <div class="body">
+      {% if info_display %}
+        <div class="grid2">
+          <table class="kv">
+            {% for k, v in info_display[:(info_display | length // 2) + 1] %}
+              <tr><td class="k">{{ k }}</td>
+              {% if v %}<td class="v">{{ v }}</td>{% else %}<td class="v empty">empty</td>{% endif %}</tr>
+            {% endfor %}
+          </table>
+          <table class="kv">
+            {% for k, v in info_display[(info_display | length // 2) + 1:] %}
+              <tr><td class="k">{{ k }}</td>
+              {% if v %}<td class="v">{{ v }}</td>{% else %}<td class="v empty">empty</td>{% endif %}</tr>
+            {% endfor %}
+          </table>
+        </div>
+      {% else %}
+        <div class="note">
+          <b>No Information Sheet data.</b>
+          It lives in the <code>Test Submissions</code> list, joined on Test
+          Request # + Test #. Either no matching row exists, or Graph access is
+          still pending consent.
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  {# ---- Photos ------------------------------------------------------ #}
+  <div class="panel">
+    <h2>Photos</h2>
+    <div class="body">
+      <div class="photos">
+        {% for key, caption in [("PhotoTop", "Top"), ("PhotoBreast", "Breast"), ("PhotoThigh", "Thigh")] %}
+          {% set att = s.attachments.get(key) %}
+          <div class="photo">
+            <figure>
+              <figcaption>{{ caption }}</figcaption>
+              <div class="frame">
+                {% if images.get(key) %}
+                  <img src="{{ images[key] }}" alt="{{ caption }}">
+                {% elif att %}
+                  <div class="ph">{{ att.name }}<br>not downloaded</div>
+                {% else %}
+                  <div class="ph">no photo</div>
+                {% endif %}
+              </div>
+            </figure>
+          </div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  {# ---- DigiEye ------------------------------------------------------ #}
+  <div class="panel">
+    <h2>DigiEye &mdash; Index Colour Map</h2>
+    <div class="body">
+      <div class="grid2">
+        <div class="photos" style="grid-template-columns:1fr 1fr;">
+          {% for key, caption in [("DigiEyePhotoOriginal", "Original with filter"), ("DigiEyeIndexMap", "Index map")] %}
+            {% set att = s.attachments.get(key) %}
+            <div class="photo">
+              <figure>
+                <figcaption>{{ caption }}</figcaption>
+                <div class="frame">
+                  {% if images.get(key) %}
+                    <img src="{{ images[key] }}" alt="{{ caption }}">
+                  {% elif att %}
+                    <div class="ph">{{ att.name }}<br>not downloaded</div>
+                  {% else %}
+                    <div class="ph">no image</div>
+                  {% endif %}
+                </div>
+              </figure>
+            </div>
+          {% endfor %}
+        </div>
+        <table class="kv">
+          <tr><td class="k">Mean L* value</td>
+              <td class="v">{{ s.scoring.get("DigiEyeMean") or "—" }}</td></tr>
+          <tr><td class="k">Index score</td>
+              <td class="v">{{ s.calculated.get("IndexScore") or "—" }}</td></tr>
+          <tr><td class="k">Colour narrative</td>
+              <td class="v">{{ s.scoring.get("ChickenColorNarrative") or "—" }}</td></tr>
+        </table>
+      </div>
+    </div>
+  </div>
+
+{% endblock %}
