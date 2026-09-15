@@ -11,6 +11,67 @@
 
 {% block content %}
 
+  {# ---- Summary strip + chart, side by side like the sheet ---------- #}
+  <div class="topgrid">
+    <div class="panel">
+      <h2>Run Summary</h2>
+      <div class="body">
+        {% for group, cells in s.summary_rows %}
+          <div class="sumgroup">
+            <div class="sumlabel">{{ group }}</div>
+            <div class="sumcells">
+              {% for label, value, note in cells %}
+                <div class="sumcell">
+                  <span class="cl">{{ label }}</span>
+                  {% if value %}
+                    <span class="cv">{{ value }}</span>
+                  {% else %}
+                    <span class="cv missing">{{ note or "—" }}</span>
+                  {% endif %}
+                </div>
+              {% endfor %}
+            </div>
+          </div>
+        {% endfor %}
+
+        <div class="total">
+          <span class="n">{{ s.total_score | int }}</span>
+          <span class="of">/ 12 total</span>
+          {% if s.verdict == "Acceptable" %}
+            <span class="verdict ok">Acceptable</span>
+          {% elif s.verdict == "Unacceptable" %}
+            <span class="verdict no">Unacceptable</span>
+          {% else %}
+            <span class="verdict none">not scored</span>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+
+    {% include "_chart.html.j2" %}
+  </div>
+
+  {# ---- Assessment criteria ----------------------------------------- #}
+  <div class="panel">
+    <h2>Assessment</h2>
+    <div class="body">
+      <table class="criteria">
+        {% for group, max_points, items in s.assessment_rows %}
+          <tr class="grouphead">
+            <th>{{ group }}</th>
+            <th class="pts">Points ({{ max_points }})</th>
+          </tr>
+          {% for text, score in items %}
+            <tr>
+              <td>{{ text }}</td>
+              <td class="pts">{{ score | int }}</td>
+            </tr>
+          {% endfor %}
+        {% endfor %}
+      </table>
+    </div>
+  </div>
+
   {# ---- Scoring ---------------------------------------------------- #}
   <div class="panel">
     <h2>Final Scoring</h2>
@@ -98,35 +159,8 @@
     </div>
   </div>
 
-  {# ---- Info sheet -------------------------------------------------- #}
-  <div class="panel">
-    <h2>Information Sheet</h2>
-    <div class="body">
-      {% if info_display %}
-        <div class="grid2">
-          <table class="kv">
-            {% for k, v in info_display[:(info_display | length // 2) + 1] %}
-              <tr><td class="k">{{ k }}</td>
-              {% if v %}<td class="v">{{ v }}</td>{% else %}<td class="v empty">empty</td>{% endif %}</tr>
-            {% endfor %}
-          </table>
-          <table class="kv">
-            {% for k, v in info_display[(info_display | length // 2) + 1:] %}
-              <tr><td class="k">{{ k }}</td>
-              {% if v %}<td class="v">{{ v }}</td>{% else %}<td class="v empty">empty</td>{% endif %}</tr>
-            {% endfor %}
-          </table>
-        </div>
-      {% else %}
-        <div class="note">
-          <b>No Information Sheet data.</b>
-          It lives in the <code>Test Submissions</code> list, joined on Test
-          Request # + Test #. Either no matching row exists, or Graph access is
-          still pending consent.
-        </div>
-      {% endif %}
-    </div>
-  </div>
+  {# ---- Info sheet: own template, mirrors the Excel Info tab --------- #}
+  {% include "_information_sheet.html.j2" %}
 
   {# ---- Photos ------------------------------------------------------ #}
   <div class="panel">

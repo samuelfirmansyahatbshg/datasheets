@@ -107,6 +107,11 @@ def fetch_images(submission: Submission, source) -> dict:
 def render(submission: Submission, *, source=None, source_name: str = "sample") -> str:
     images = fetch_images(submission, source) if source else {}
 
+    def energy(key):
+        """Formatted energy value, or None so the template shows its own note."""
+        value = submission.energy.get(key)
+        return f"{value:,.1f}" if isinstance(value, (int, float)) else None
+
     env = _env()
     template = env.get_template(template_for(submission.food_type))
     return template.render(
@@ -117,4 +122,8 @@ def render(submission: Submission, *, source=None, source_name: str = "sample") 
         scoring_display=_pairs(submission.scoring),
         calculated_display=_pairs(submission.calculated),
         info_display=_pairs(submission.info),
+        energy_preheat=energy("preheat_energy"),
+        energy_cooking=energy("cooking_energy"),
+        energy_total=energy("total_energy"),
+        energy_voltage=energy("voltage"),
     )

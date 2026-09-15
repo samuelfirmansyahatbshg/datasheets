@@ -178,6 +178,86 @@ class Submission:
             return ""
         return "Acceptable" if self.total_score > 9 else "Unacceptable"
 
+    def _fmt_energy(self, key: str) -> str:
+        value = self.energy.get(key)
+        return f"{value:,.1f}" if isinstance(value, (int, float)) else ""
+
+    @property
+    def summary_rows(self) -> list:
+        """The header block from the Excel sheet: mode, energy, time.
+
+        Each cell is (label, value, note). A blank value with a note renders as
+        "not captured" rather than an empty box - two of these fields were on
+        the old Excel Info sheet but never made it onto the Form, and a silent
+        gap would read as "the oven ran at no temperature".
+        """
+        return [
+            (
+                "Oven Mode & Temp",
+                [
+                    ("Mode", self.info.get("HeatingMode", ""), ""),
+                    ("Temperature", "", "not on the form"),
+                ],
+            ),
+            (
+                "Energy Consumption",
+                [
+                    ("Preheat (Wh)", self._fmt_energy("preheat_energy"), "from raw log"),
+                    ("Cooking (Wh)", self._fmt_energy("cooking_energy"), "from raw log"),
+                    ("Total (Wh)", self._fmt_energy("total_energy"), "from raw log"),
+                ],
+            ),
+            (
+                "Time",
+                [
+                    ("Preheat", "", "not on the form"),
+                    ("Cooking", self.info.get("CookingTime", ""), ""),
+                    ("Transfer", self.info.get("TransferTime", ""), ""),
+                ],
+            ),
+        ]
+
+    @property
+    def assessment_rows(self) -> list:
+        """The criteria block, each with the score that decided it.
+
+        Wording follows the workbook so the dashboard reads the same as the
+        sheet it replaces.
+        """
+        return [
+            (
+                "Time Criteria",
+                3,
+                [
+                    (
+                        "Mode-dependent min/lb thresholds (Bake / Roast / Rotisserie)",
+                        self.calc("TimeScore"),
+                    )
+                ],
+            ),
+            (
+                "Quality Criteria",
+                3,
+                [
+                    ("Chicken reaches 180°F in the thigh", self.calc("ThighScore")),
+                    ("Chicken reaches 170°F in the breast", self.calc("BreastScore")),
+                    (
+                        "Meat slices easily, is not tough or dry; juicy and tender",
+                        self.calc("MeatTextureScore"),
+                    ),
+                    ("Skin is dry to the touch", self.calc("TextureScore")),
+                ],
+            ),
+            (
+                "DigiEye Criteria",
+                3,
+                [
+                    ("Index score of at least 2 points", self.calc("IndexScore")),
+                    ("Skin is evenly browned", self.calc("EvennessScore")),
+                ],
+            ),
+        ]
+
     @property
     def score_row(self) -> list:
         """The seven individual criterion scores, in the order the sheet lists them."""

@@ -1,0 +1,228 @@
+{#
+  The Information Sheet, laid out like the Excel `Info` tab it replaces.
+
+  Deliberately mirrors the workbook rather than reflowing into something
+  tidier: people read this alongside the real sheet, and matching the grouping
+  and the label wording is what makes it recognisable. Two banded sections
+  (INFORMATION SHEET, TEST CONDITIONS) then Evaluation, each a row of labelled
+  column blocks.
+
+  Fields the Form never captures render as "not on the form" rather than
+  blank - a silent gap here reads as "the oven ran at no temperature", which
+  is worse than saying nothing was recorded.
+#}
+
+{% macro kv(label, value, note="") -%}
+  <tr>
+    <td class="k">{{ label }}</td>
+    {% if value not in (None, "") %}
+      <td class="v">{{ value }}</td>
+    {% elif note %}
+      <td class="v missing">{{ note }}</td>
+    {% else %}
+      <td class="v blank">&mdash;</td>
+    {% endif %}
+  </tr>
+{%- endmacro %}
+
+{% set i = s.info %}
+
+<div class="panel infosheet">
+  <h2>Information Sheet</h2>
+  <div class="body">
+
+    {% if not i %}
+      <div class="note">
+        <b>No Information Sheet data.</b>
+        It lives in the <code>Test Submissions</code> list, joined on Test
+        Request&nbsp;# + Test&nbsp;#. Either no matching row exists, or Graph
+        access is still pending consent.
+      </div>
+    {% else %}
+
+    <div class="band">Appliance Information</div>
+    <div class="cols">
+      <div class="col">
+        <h3>General Data</h3>
+        <table class="kv">
+          {{ kv("Test Request #:", i.get("TestRequestNum")) }}
+          {{ kv("Test #:", i.get("TestNum")) }}
+          {{ kv("Date of Test:", i.get("DateOfTest")) }}
+          {{ kv("Name:", i.get("Name")) }}
+          {{ kv("Location:", i.get("Location")) }}
+          {{ kv("Project:", i.get("Project")) }}
+          {{ kv("Reason for Test / Revision:", i.get("ReasonForTest")) }}
+        </table>
+      </div>
+
+      <div class="col">
+        <h3>Appliance Data / Information</h3>
+        <table class="kv">
+          {{ kv("DE#:", i.get("DENumber")) }}
+          {{ kv("Type of Appliance:", i.get("TypeOfAppliance")) }}
+          {{ kv("Size:", i.get("Size")) }}
+          {{ kv("Features:", i.get("Feature")) }}
+          {{ kv("Voltage (V):", i.get("Voltage")) }}
+          {{ kv("Brand:", i.get("Brand")) }}
+          {{ kv("Model:", i.get("Model")) }}
+          {{ kv("Racks Used:", i.get("RacksUsed")) }}
+          {{ kv("Build Type:", i.get("BuildUsed")) }}
+          {{ kv("Special Info:", i.get("SpecialInfo")) }}
+        </table>
+      </div>
+
+      <div class="col">
+        <h3>Element Information</h3>
+        <table class="kv">
+          {{ kv("Heating Element:", "bake") }}
+          {{ kv("Power (W / BTU):", i.get("PowerBake")) }}
+        </table>
+        <table class="kv spaced">
+          {{ kv("Heating Element:", "broil") }}
+          {{ kv("Power (W / BTU):", i.get("PowerBroil")) }}
+        </table>
+        <table class="kv spaced">
+          {{ kv("Heating Element:", "convection") }}
+          {{ kv("Power (W / BTU):", i.get("PowerConvection")) }}
+        </table>
+      </div>
+
+      <div class="col">
+        <h3>Food Tested</h3>
+        <table class="kv">
+          {{ kv("Test Dish:", i.get("TestDish")) }}
+          {{ kv("Start Weight/Amount Lbs:", i.get("StartWeightLbs")) }}
+          {{ kv("Unit:", i.get("Unit")) }}
+          {{ kv("Number of Items:", i.get("NumberOfItems")) }}
+          {{ kv("End Weight [g]:", i.get("EndWeightG")) }}
+          {{ kv("Number of Levels:", i.get("NumberOfLevels")) }}
+        </table>
+        <h3 class="spaced">Environmental Conditions</h3>
+        <table class="kv">
+          {{ kv("Ambient Temperature F:", i.get("AmbientTempF")) }}
+          {{ kv("Humidity:", i.get("Humidity")) }}
+        </table>
+      </div>
+    </div>
+
+    <div class="band">Test Conditions</div>
+    <div class="cols">
+      <div class="col">
+        <h3>Preheat Information</h3>
+        <table class="kv">
+          {{ kv("Preheating:", i.get("Preheating")) }}
+          {{ kv("Heating Mode:", i.get("HeatingMode")) }}
+          {{ kv("Temp C:", none, "not on the form") }}
+          {{ kv("Temp F:", none, "not on the form") }}
+          {{ kv("Preheat Time (hh:mm:ss):", none, "not on the form") }}
+          {{ kv("Preheat Energy (Wh):", energy_preheat, "needs raw log") }}
+        </table>
+      </div>
+
+      <div class="col">
+        <h3>Oven Settings: Mode and Temperature</h3>
+        <table class="kv">
+          {{ kv("Heating Mode:", i.get("HeatingMode")) }}
+          {{ kv("Temp C:", none, "not on the form") }}
+          {{ kv("Temp F:", none, "not on the form") }}
+          {{ kv("Grill Setting:", i.get("GrillSetting")) }}
+          {{ kv("Steam:", i.get("Steam")) }}
+        </table>
+      </div>
+
+      <div class="col">
+        <h3>Rack Positions</h3>
+        {% for suffix in ["A", "B", "C"] %}
+          <table class="kv {{ 'spaced' if not loop.first }}">
+            {{ kv("Level:", i.get("RackLevel" ~ suffix)) }}
+            {{ kv("Accessory:", i.get("RackAccessory" ~ suffix)) }}
+            {{ kv("Material:", i.get("RackMaterial" ~ suffix)) }}
+            {{ kv("Comment:", i.get("RackComment" ~ suffix)) }}
+          </table>
+        {% endfor %}
+      </div>
+
+      <div class="col">
+        <h3>Food Placement</h3>
+        {% for suffix in ["A", "B", "C"] %}
+          <table class="kv {{ 'spaced' if not loop.first }}">
+            {{ kv("Level:", i.get("FoodLevel" ~ suffix)) }}
+            {{ kv("Accessory:", i.get("FoodAccessory" ~ suffix)) }}
+            {{ kv("Material:", i.get("FoodMaterial" ~ suffix)) }}
+            {{ kv("Comment:", i.get("FoodComment" ~ suffix)) }}
+          </table>
+        {% endfor %}
+      </div>
+
+      <div class="col">
+        <h3>Energy and Cooking Time</h3>
+        <table class="kv">
+          {{ kv("Energy Cooking (Wh):", energy_cooking, "needs raw log") }}
+          {{ kv("Water Tank Before (g):", i.get("WaterTankBeforeG")) }}
+          {{ kv("Water Tank After (g):", i.get("WaterTankAfterG")) }}
+          {{ kv("Water Used:", s.calculated.get("WaterUsed")) }}
+          {{ kv("Transfer Time (hh:mm:ss):", i.get("TransferTime")) }}
+          {{ kv("Cooking Time (hh:mm:ss):", i.get("CookingTime")) }}
+        </table>
+
+        <h3 class="spaced">Gas Energy</h3>
+        <table class="kv">
+          {{ kv("Heat Value:", i.get("HeatValue")) }}
+          {{ kv("Barometric Pressure:", i.get("BarometricPressure")) }}
+          {{ kv("Time for 2 Revs:", i.get("TimeFor2Revs")) }}
+          {{ kv("Burner BTU:", i.get("BurnerBTU")) }}
+        </table>
+
+        <h3 class="spaced">Energy and Time Totals</h3>
+        <table class="kv">
+          {{ kv("Total Time:", none, "not on the form") }}
+          {{ kv("Energy Total (Wh):", energy_total, "needs raw log") }}
+          {{ kv("Voltage:", energy_voltage, "needs raw log") }}
+        </table>
+      </div>
+    </div>
+
+    <div class="band">Evaluation</div>
+    <div class="cols">
+      <div class="col wide">
+        <table class="kv">
+          {{ kv("Comments:", i.get("Comments")) }}
+          {{ kv("Accepted:", i.get("Accepted")) }}
+          {{ kv("Points:", s.calculated.get("TotalScore")) }}
+        </table>
+      </div>
+    </div>
+
+    {% endif %}
+  </div>
+</div>
+
+<style>
+  .infosheet .band {
+    background: var(--head); border: 1px solid var(--line);
+    padding: 5px 12px; margin: 0 0 10px;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .07em; text-align: center;
+  }
+  .infosheet .band:not(:first-child) { margin-top: 20px; }
+  .infosheet .cols {
+    display: grid; gap: 12px;
+    grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+    align-items: start;
+  }
+  .infosheet .col.wide { grid-column: 1 / -1; max-width: 640px; }
+  .infosheet h3 {
+    margin: 0 0 5px; padding: 3px 7px;
+    background: var(--line-soft); border: 1px solid var(--line);
+    font-size: 11px; font-weight: 700; letter-spacing: .02em;
+  }
+  .infosheet h3.spaced { margin-top: 14px; }
+  .infosheet table.kv.spaced { margin-top: 10px; }
+  .infosheet table.kv td { padding: 3px 7px; font-size: 12px; }
+  .infosheet table.kv td.k { width: 54%; }
+  .infosheet table.kv td.v.missing {
+    color: var(--ink-faint); font-style: italic;
+    font-family: inherit; font-size: 11px;
+  }
+  .infosheet table.kv td.v.blank { color: var(--ink-faint); font-family: inherit; }
+</style>
