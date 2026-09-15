@@ -1,0 +1,190 @@
+{#
+  The Form Response, laid out like the Excel `Whole Chicken` tab it replaces.
+
+  The workbook's scoring tab is not a flat key/value list - it is a header
+  block (food constants, test identity, score guide), then one panel per
+  assessment question with the tester's narrative underneath, then the
+  measured readings. FormResponseJSON holds exactly those answers, so it is
+  presented in that shape rather than as a dump of field names.
+
+  Question wording is copied verbatim from the sheet so the two read the
+  same side by side. Fixed constants (brand, pan, reference time) come from
+  the workbook, not the Form - they are properties of the test method.
+#}
+
+{% macro kv(label, value, note="") -%}
+  <tr>
+    <td class="k">{{ label }}</td>
+    {% if value not in (None, "") %}
+      <td class="v">{{ value }}</td>
+    {% elif note %}
+      <td class="v missing">{{ note }}</td>
+    {% else %}
+      <td class="v blank">&mdash;</td>
+    {% endif %}
+  </tr>
+{%- endmacro %}
+
+{# A question panel: the sheet's prompt, then the answer, then any notes. #}
+{% macro question(prompt, answer, notes="") -%}
+  <div class="qblock">
+    <div class="qprompt">{{ prompt }}</div>
+    {% if answer not in (None, "") %}
+      <div class="qanswer">{{ answer }}</div>
+    {% else %}
+      <div class="qanswer empty">not answered</div>
+    {% endif %}
+    {% if notes not in (None, "") %}
+      <div class="qnotes">{{ notes }}</div>
+    {% endif %}
+  </div>
+{%- endmacro %}
+
+{% set f = s.scoring %}
+
+<div class="panel formresp xl">
+  <h2>Form Response &mdash; {{ s.food_type or "Scoring" }}</h2>
+  <div class="panelbody">
+
+    {# ---- Header block: the sheet's top-left and top-right corners ---- #}
+    <div class="cols hdr">
+      <div class="col">
+        <h3>Food Information</h3>
+        <table class="xlkv">
+          {{ kv("Brand Used:", food_brand) }}
+          {{ kv("Pan Used:", food_pan) }}
+          {{ kv("Cooking Time:", food_reference_time) }}
+        </table>
+
+        <table class="xlkv spaced">
+          {{ kv("Test Request #:", s.test_request_num) }}
+          {{ kv("Test #:", s.test_num) }}
+        </table>
+      </div>
+
+      <div class="col">
+        <h3>Overall Score out of 12</h3>
+        <div class="bigscore">
+          <span class="n">{{ s.total_score | int }}</span>
+          {% if s.verdict == "Acceptable" %}
+            <span class="xverdict ok">Acceptable</span>
+          {% elif s.verdict == "Unacceptable" %}
+            <span class="xverdict no">Unacceptable</span>
+          {% else %}
+            <span class="xverdict none">not scored</span>
+          {% endif %}
+        </div>
+
+        <h3 class="sub spaced">Overall Score Guide</h3>
+        <table class="xlkv guide">
+          <tr><td class="k ok">Acceptable</td><td class="v">10-12 points</td></tr>
+          <tr><td class="k no">Unacceptable</td><td class="v">9 points and below.</td></tr>
+        </table>
+      </div>
+
+      <div class="col">
+        <h3>Index Map Final Score</h3>
+        <table class="xlkv">
+          {{ kv("Rack Position:", s.info.get("FoodLevelA"), "from Info Sheet") }}
+          {{ kv("Index Score:", f.get("IndexScore")) }}
+        </table>
+
+        <h3 class="sub spaced">Final Score Index</h3>
+        <table class="xlkv">
+          {{ kv("Rack Position:", s.info.get("FoodLevelA"), "from Info Sheet") }}
+          {{ kv("L Value:", f.get("DigiEyeMean")) }}
+        </table>
+      </div>
+    </div>
+
+    {# ---- The assessment questions, in the sheet's order -------------- #}
+    <div class="band">Assessment Questions</div>
+    <div class="qgrid">
+      {{ question(
+           "Temperature: Did chicken juices run clear? Did the temperature of the breast reach 170F and the thigh reach 180F ?",
+           f.get("TemperatureNarrative")) }}
+
+      {{ question(
+           "Chicken Color: Describe the chicken color. What is the avg. L* value for the chicken?",
+           f.get("ChickenColorNarrative")) }}
+
+      {{ question(
+           "Meat Texture: Describe the meat texture. Does it slice easily? Is it tender and juicy?",
+           f.get("MeatTexture"), f.get("MeatTextureNotes")) }}
+
+      {{ question(
+           "Meat Evenness: Is the chicken skin evenly browned? See quality criteria for reference pictures.",
+           f.get("SkinEvenness"), f.get("SkinEvennessNotes")) }}
+
+      {{ question(
+           "Skin Texture: Is the chicken skin dry to the touch or still moist and wet?",
+           f.get("SkinTexture"), f.get("SkinTextureNotes")) }}
+
+      {{ question("Time result:", f.get("TimeResult")) }}
+    </div>
+
+    {# ---- Measured readings ------------------------------------------- #}
+    <div class="band">Measurements</div>
+    <div class="cols">
+      <div class="col">
+        <h3>Temperature Readings (&deg;F)</h3>
+        <table class="xlkv">
+          {{ kv("Thigh &mdash; oven back:" | safe, f.get("ThighOvenBack")) }}
+          {{ kv("Breast &mdash; oven back:" | safe, f.get("BreastOvenBack")) }}
+          {{ kv("Thigh &mdash; oven front:" | safe, f.get("ThighOvenFront")) }}
+          {{ kv("Breast &mdash; oven front:" | safe, f.get("BreastOvenFront")) }}
+        </table>
+      </div>
+
+      <div class="col">
+        <h3>Weights</h3>
+        <table class="xlkv">
+          {{ kv("Package Weight:", f.get("PackageWeight")) }}
+          {{ kv("Weight After Cleaning:", f.get("WeightAfterCleaning")) }}
+          {{ kv("Weight After Cooking:", f.get("WeightAfterCooking")) }}
+          {{ kv("Pan Weight:", f.get("PanWeight")) }}
+          {{ kv("Pan and Drippings:", f.get("PanAndDrippings")) }}
+        </table>
+      </div>
+
+      <div class="col">
+        <h3>DigiEye</h3>
+        <table class="xlkv">
+          {{ kv("Mean L* value:", f.get("DigiEyeMean")) }}
+          {{ kv("Index Score:", f.get("IndexScore")) }}
+        </table>
+      </div>
+
+      <div class="col">
+        <h3>Uploads</h3>
+        <table class="xlkv">
+          {% for key, label in [
+               ("PhotoTop", "Photo &mdash; top:"),
+               ("PhotoBreast", "Photo &mdash; breast:"),
+               ("PhotoThigh", "Photo &mdash; thigh:"),
+               ("DigiEyePhotoOriginal", "DigiEye original:"),
+               ("DigiEyeIndexMap", "DigiEye index map:"),
+               ("RawDataCSV", "Raw data log:") ] %}
+            {% set att = s.attachments.get(key) %}
+            {{ kv(label | safe, att.name if att else none, "not uploaded") }}
+          {% endfor %}
+        </table>
+      </div>
+    </div>
+
+    {# ---- Anything the form sent that this layout does not place ------ #}
+    {% if formresp_extra %}
+      <div class="band">Other Fields</div>
+      <div class="cols">
+        <div class="col wide">
+          <table class="xlkv">
+            {% for k, v in formresp_extra %}
+              {{ kv(k ~ ":", v) }}
+            {% endfor %}
+          </table>
+        </div>
+      </div>
+    {% endif %}
+
+  </div>
+</div>

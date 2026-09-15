@@ -21,6 +21,27 @@
     --bad-bg: #fbe3dd;
     --warn-bg: #fdf3d8;
     --mono: ui-monospace, "Cascadia Code", "SF Mono", Consolas, monospace;
+
+    /* ---- The workbook's own palette -------------------------------------
+       Lifted from `Mehring Pending 4385-O Whole Chicken Datasheet.xlsx` so
+       the Information Sheet and Form Response read as the sheets they
+       replace. These are deliberately NOT redefined for dark mode: they are
+       the sheet's identity, and a "dark beige" is just a different colour.
+       Everything painted with them carries --sheet-ink so the text stays
+       legible whichever theme the page is in. */
+    --x-band:    #D9D9D9;  /* APPLIANCE INFORMATION / TEST CONDITIONS */
+    --x-head:    #B7DEE8;  /* General Data, Test Request #: ...        */
+    --x-subhead: #DBEEF4;  /* Rack Position                            */
+    --x-body:    #D6D4CB;  /* the Info tab's field cells               */
+    --x-alt:     #EEECE1;  /* Minimum row                              */
+    --x-input:   #FFFF00;  /* fillable / annotated cells               */
+    --x-soft:    #F2F2F2;  /* Food Information                         */
+    --x-photo:   #4BACC6;  /* TOP / BREAST / THIGH captions            */
+    --x-note:    #93CDDD;
+    --x-ok:      #00DE64;
+    --x-no:      #FF6B5B;
+    --x-line:    #9aa3ab;
+    --sheet-ink: #16191c;
   }
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
@@ -55,6 +76,7 @@
     font-size: 15px; font-weight: 700; text-align: center;
     letter-spacing: .01em;
   }
+  h1.title.dashtitle { margin-top: 26px; }
   .meta {
     display: flex; flex-wrap: wrap; gap: 16px;
     margin: -6px 0 14px; padding: 0 2px;
@@ -179,6 +201,101 @@
   .note b { color: var(--ink); }
   a { color: var(--accent); }
   :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* ---- Shared sheet-styled building blocks ---------------------------
+     Used by the Information Sheet and Form Response sections, which mirror
+     the workbook tabs. Anything inside .xl paints on the Excel palette and
+     pins its own ink, so it looks identical in light and dark. */
+  .xl, .xl * { color: var(--sheet-ink); }
+  .xl .panelbody { padding: 12px; background: #ffffff; }
+
+  .xl .band {
+    background: var(--x-band); border: 1px solid var(--x-line);
+    padding: 5px 12px; margin: 0 0 10px;
+    font-size: 11px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: .07em; text-align: center;
+  }
+  .xl .band + .band, .xl .cols + .band { margin-top: 18px; }
+
+  .xl .cols {
+    display: grid; gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(215px, 1fr));
+    align-items: start;
+  }
+  .xl .col.wide { grid-column: 1 / -1; max-width: 660px; }
+
+  .xl h3 {
+    margin: 0 0 4px; padding: 3px 7px;
+    background: var(--x-head); border: 1px solid var(--x-line);
+    font-size: 11px; font-weight: 700; letter-spacing: .02em;
+  }
+  .xl h3.sub { background: var(--x-subhead); }
+  .xl h3.spaced, .xl table.xlkv.spaced { margin-top: 12px; }
+
+  .xl table.xlkv { width: 100%; border-collapse: collapse; }
+  .xl table.xlkv td {
+    border: 1px solid var(--x-line); padding: 3px 7px;
+    font-size: 12px; vertical-align: top; background: var(--x-body);
+  }
+  .xl table.xlkv td.k { width: 52%; }
+  .xl table.xlkv td.v { font-family: var(--mono); word-break: break-word; }
+  .xl table.xlkv td.v.missing {
+    font-family: inherit; font-size: 11px; font-style: italic; opacity: .72;
+  }
+  .xl table.xlkv td.v.blank { font-family: inherit; opacity: .5; }
+
+  /* Header strip of the scoring tab. */
+  .xl .cols.hdr { margin-bottom: 16px; }
+  .xl .bigscore {
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 10px; border: 1px solid var(--x-line); background: var(--x-alt);
+  }
+  .xl .bigscore .n {
+    font-family: var(--mono); font-size: 28px; font-weight: 700;
+    font-variant-numeric: tabular-nums; line-height: 1;
+  }
+  .xl .xverdict {
+    margin-left: auto; padding: 3px 12px;
+    font-size: 12px; font-weight: 700; border: 1px solid var(--x-line);
+  }
+  .xl .xverdict.ok { background: var(--x-ok); }
+  .xl .xverdict.no { background: var(--x-no); }
+  .xl .xverdict.none { background: var(--x-soft); font-weight: 400; font-style: italic; }
+  .xl table.xlkv.guide td.k { font-weight: 700; }
+  .xl table.xlkv.guide td.k.ok { background: var(--x-ok); }
+  .xl table.xlkv.guide td.k.no { background: var(--x-no); }
+
+  /* One panel per assessment question, mirroring the sheet's P column. */
+  .xl .qgrid {
+    display: grid; gap: 10px;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    align-items: start;
+  }
+  .xl .qblock { border: 1px solid var(--x-line); }
+  .xl .qprompt {
+    padding: 5px 8px; background: var(--x-head);
+    font-size: 11.5px; font-weight: 700; line-height: 1.35;
+    border-bottom: 1px solid var(--x-line);
+  }
+  .xl .qanswer {
+    padding: 7px 8px; background: var(--x-input);
+    font-size: 12px; line-height: 1.4; white-space: pre-wrap;
+  }
+  .xl .qanswer.empty {
+    background: var(--x-body); font-style: italic; opacity: .7; font-size: 11px;
+  }
+  .xl .qnotes {
+    padding: 5px 8px; background: var(--x-body);
+    border-top: 1px solid var(--x-line);
+    font-size: 11.5px; line-height: 1.4; white-space: pre-wrap;
+  }
+  .xl .qnotes::before {
+    content: "Notes: "; font-weight: 700; opacity: .75;
+  }
+
+  /* Calculated values, same palette, grouped by what they feed. */
+  .xl table.xlkv td.v.calc { font-weight: 600; }
+  .xl .scorecell { background: var(--x-alt) !important; }
 </style>
 </head>
 <body>

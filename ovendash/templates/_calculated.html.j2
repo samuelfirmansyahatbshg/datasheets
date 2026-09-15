@@ -1,0 +1,141 @@
+{#
+  CalculatedDataJSON - everything the Power Automate flow derives.
+
+  Grouped by what each value feeds rather than listed alphabetically: the
+  scores that make up the total, the readings they came from, and the
+  weight/time maths behind them. Same palette as the sheets either side of
+  it, so the three sections read as one document.
+
+  Anything the flow sends that is not placed below still appears, under
+  "Other" - a new calculated field should show up on the dashboard without
+  needing this template edited first.
+#}
+
+{% macro kv(label, value, note="") -%}
+  <tr>
+    <td class="k">{{ label }}</td>
+    {% if value not in (None, "") %}
+      <td class="v calc">{{ value }}</td>
+    {% elif note %}
+      <td class="v missing">{{ note }}</td>
+    {% else %}
+      <td class="v blank">&mdash;</td>
+    {% endif %}
+  </tr>
+{%- endmacro %}
+
+{% set c = s.calculated %}
+
+<div class="panel calculated xl">
+  <h2>Calculated Data</h2>
+  <div class="panelbody">
+
+    {% if not c %}
+      <div class="note">
+        <b>No calculated data.</b> The flow writes
+        <code>CalculatedDataJSON</code> when the scoring form is submitted.
+      </div>
+    {% else %}
+
+    <div class="band">Scoring</div>
+    <div class="cols">
+      <div class="col">
+        <h3>Criterion Scores</h3>
+        <table class="xlkv">
+          {{ kv("Index:", c.get("IndexScore")) }}
+          {{ kv("Temp thigh:", c.get("ThighScore")) }}
+          {{ kv("Temp breast:", c.get("BreastScore")) }}
+          {{ kv("Meat texture:", c.get("MeatTextureScore")) }}
+          {{ kv("Evenness:", c.get("EvennessScore")) }}
+          {{ kv("Skin texture:", c.get("TextureScore")) }}
+          {{ kv("Time:", c.get("TimeScore")) }}
+        </table>
+      </div>
+
+      <div class="col">
+        <h3 class="sub">Group Minimums</h3>
+        <table class="xlkv">
+          {{ kv("Index:", c.get("IndexScore")) }}
+          {{ kv("Temperature:", c.get("TemperatureGroup")) }}
+          {{ kv("Quality:", c.get("QualityGroup")) }}
+          {{ kv("Time:", c.get("TimeScore")) }}
+        </table>
+        <table class="xlkv spaced">
+          <tr>
+            <td class="k scorecell"><b>Total Score out of 12:</b></td>
+            <td class="v calc scorecell">{{ s.total_score | int }}</td>
+          </tr>
+        </table>
+      </div>
+
+      <div class="col">
+        <h3>Temperature Readings</h3>
+        <table class="xlkv">
+          {{ kv("Thigh reading:", c.get("ThighReading")) }}
+          {{ kv("Breast reading:", c.get("BreastReading")) }}
+        </table>
+
+        <h3 class="spaced">Environment</h3>
+        <table class="xlkv">
+          {{ kv("Ambient Temp C:", c.get("AmbientTempC")) }}
+          {{ kv("Water used:", c.get("WaterUsed")) }}
+        </table>
+      </div>
+
+      <div class="col">
+        <h3>Weight Loss</h3>
+        <table class="xlkv">
+          {{ kv("Drippings:", c.get("Drippings")) }}
+          {{ kv("Drip loss %:", c.get("PercentDripLoss")) }}
+          {{ kv("Weight difference:", c.get("WeightDifference")) }}
+          {{ kv("Loss %:", c.get("PercentLoss")) }}
+        </table>
+      </div>
+    </div>
+
+    <div class="band">Timing</div>
+    <div class="cols">
+      <div class="col">
+        <h3>Durations</h3>
+        <table class="xlkv">
+          {{ kv("Cooking time (s):", c.get("CookingTimeSeconds")) }}
+          {{ kv("Cooking time (min):", c.get("CookingTimeMinutes")) }}
+          {{ kv("Transfer time (s):", c.get("TransferTimeSeconds")) }}
+        </table>
+      </div>
+
+      <div class="col">
+        <h3 class="sub">Rate vs Reference</h3>
+        <table class="xlkv">
+          {{ kv("Reference min/lb:", c.get("ReferenceMinPerLb")) }}
+          {{ kv("Actual min/lb:", c.get("ActualMinPerLb")) }}
+        </table>
+      </div>
+
+      <div class="col">
+        <h3>Energy (from raw log)</h3>
+        <table class="xlkv">
+          {{ kv("Preheat (Wh):", energy_preheat, "needs raw log") }}
+          {{ kv("Cooking (Wh):", energy_cooking, "needs raw log") }}
+          {{ kv("Total (Wh):", energy_total, "needs raw log") }}
+          {{ kv("Voltage (V):", energy_voltage, "needs raw log") }}
+        </table>
+      </div>
+    </div>
+
+    {% if calculated_extra %}
+      <div class="band">Other</div>
+      <div class="cols">
+        <div class="col wide">
+          <table class="xlkv">
+            {% for k, v in calculated_extra %}
+              {{ kv(k ~ ":", v) }}
+            {% endfor %}
+          </table>
+        </div>
+      </div>
+    {% endif %}
+
+    {% endif %}
+  </div>
+</div>

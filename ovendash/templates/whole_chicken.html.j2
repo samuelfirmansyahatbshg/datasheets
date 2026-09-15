@@ -4,14 +4,27 @@
   Whole Chicken. One template per food by design - each rubric differs enough
   that a single template full of conditionals would be worse than a copy.
 
-  Layout follows the Excel "Final Assessment" sheet: scoring up top, the trace
-  in the middle, photos at the bottom, with the two raw JSON blobs presented as
-  their own readable panels.
+  Section order follows the workbook's tab order, which is also the order the
+  data is produced in: the Info Sheet is filled before the run, the scoring
+  form after it, the calculations derive from both, and the dashboard is what
+  gets read last. Each of the first three mirrors its Excel tab, palette
+  included; the dashboard is the one section with no sheet to imitate.
 #}
 
 {% block content %}
 
-  {# ---- Summary strip + chart, side by side like the sheet ---------- #}
+  {# ---- 1. Information Sheet (Excel `Info` tab) ---------------------- #}
+  {% include "_information_sheet.html.j2" %}
+
+  {# ---- 2. Form Response (Excel `Whole Chicken` tab) ----------------- #}
+  {% include "_form_response.html.j2" %}
+
+  {# ---- 3. Calculated Data ------------------------------------------- #}
+  {% include "_calculated.html.j2" %}
+
+  {# ---- 4. Dashboard -------------------------------------------------- #}
+  <h1 class="title dashtitle">Dashboard</h1>
+
   <div class="topgrid">
     <div class="panel">
       <h2>Run Summary</h2>
@@ -122,45 +135,6 @@
       </p>
     </div>
   </div>
-
-  {# ---- Chart ------------------------------------------------------ #}
-  {% include "_chart.html.j2" %}
-
-  {# ---- The two JSON blobs, side by side ---------------------------- #}
-  <div class="grid2">
-    <div class="panel">
-      <h2>Form Response</h2>
-      <div class="body">
-        <table class="kv">
-          {% for k, v in scoring_display %}
-            <tr>
-              <td class="k">{{ k }}</td>
-              {% if v %}<td class="v">{{ v }}</td>
-              {% else %}<td class="v empty">empty</td>{% endif %}
-            </tr>
-          {% endfor %}
-        </table>
-      </div>
-    </div>
-
-    <div class="panel">
-      <h2>Calculated</h2>
-      <div class="body">
-        <table class="kv">
-          {% for k, v in calculated_display %}
-            <tr>
-              <td class="k">{{ k }}</td>
-              {% if v %}<td class="v">{{ v }}</td>
-              {% else %}<td class="v empty">empty</td>{% endif %}
-            </tr>
-          {% endfor %}
-        </table>
-      </div>
-    </div>
-  </div>
-
-  {# ---- Info sheet: own template, mirrors the Excel Info tab --------- #}
-  {% include "_information_sheet.html.j2" %}
 
   {# ---- Photos ------------------------------------------------------ #}
   <div class="panel">
